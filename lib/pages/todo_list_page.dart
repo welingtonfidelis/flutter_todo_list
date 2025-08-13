@@ -124,20 +124,18 @@ class _TodoListPageState extends State<TodoListPage> {
 
                 Expanded(
                   child: todos.isEmpty
-                      ? Text('Nada para fazer por enquanto')
-                      : Flexible(
-                          child: ListView(
-                            shrinkWrap: true,
-                            children: [
-                              for (Todo todo in todos)
-                                TodoListItem(
-                                  todo: todo,
-                                  onDelete: onTodoDelete,
-                                ),
-                            ],
-                          ),
+                      ? Center(child: Text('Nada para fazer por enquanto'))
+                      : ListView.builder(
+                          itemCount: todos.length,
+                          itemBuilder: (context, index) {
+                            return TodoListItem(
+                              todo: todos[index],
+                              onDelete: onTodoDelete,
+                            );
+                          },
                         ),
                 ),
+                
                 SizedBox(height: 16),
                 Row(
                   children: [
