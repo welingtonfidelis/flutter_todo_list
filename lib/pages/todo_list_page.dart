@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_list/model/todo.dart';
+import 'package:flutter_todo_list/repositories/todo_repository.dart';
 import 'package:flutter_todo_list/widgets/todo_list_item.dart';
 
 class TodoListPage extends StatefulWidget {
@@ -10,24 +11,51 @@ class TodoListPage extends StatefulWidget {
 }
 
 class _TodoListPageState extends State<TodoListPage> {
-  List<Todo> todos = [];
-
   final TextEditingController todoController = TextEditingController();
+  final TodoRepository todoRepository = TodoRepository();
+
+  List<Todo> todos = [];
+  String? todoInputErrorText;
+
+  @override
+  void initState() {
+    super.initState();
+
+    todoRepository.getTodoList().then((list) {
+      setState(() {
+        todos = list;
+      });
+    });
+  }
 
   void addTodo() {
+    String text = todoController.text;
+
+    if (text.isEmpty) {
+      setState(() {
+        todoInputErrorText = 'O título não pode ser vazio.';
+      });
+
+      return;
+    }
+
     setState(() {
-      Todo newTodo = Todo(title: todoController.text, dateTime: DateTime.now());
+      Todo newTodo = Todo(title: text, dateTime: DateTime.now());
 
       todos.add(newTodo);
     });
 
     todoController.clear();
+
+    todoRepository.saveTodoList(todos);
   }
 
   void undoDeleteTodo(int index, Todo todo) {
     setState(() {
       todos.insert(index, todo);
     });
+
+    todoRepository.saveTodoList(todos);
   }
 
   void onTodoDelete(Todo todo) {
@@ -36,6 +64,8 @@ class _TodoListPageState extends State<TodoListPage> {
     setState(() {
       todos.remove(todo);
     });
+
+    todoRepository.saveTodoList(todos);
 
     ScaffoldMessenger.of(context).clearSnackBars();
 
@@ -84,6 +114,14 @@ class _TodoListPageState extends State<TodoListPage> {
     );
   }
 
+  void clearTodoInputErrorText() {
+    if (todoInputErrorText == null) return;
+
+    setState(() {
+      todoInputErrorText = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,10 +137,18 @@ class _TodoListPageState extends State<TodoListPage> {
                     Expanded(
                       child: TextField(
                         decoration: InputDecoration(
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Color(0xff00d7f3),
+                              width: 2,
+                            ),
+                          ),
                           border: OutlineInputBorder(),
                           labelText: 'Adicione uma Tarefa',
+                          errorText: todoInputErrorText,
                         ),
                         controller: todoController,
+                        onChanged: (_) => clearTodoInputErrorText(),
                       ),
                     ),
                     SizedBox(width: 8),
@@ -135,7 +181,7 @@ class _TodoListPageState extends State<TodoListPage> {
                           },
                         ),
                 ),
-                
+
                 SizedBox(height: 16),
                 Row(
                   children: [
